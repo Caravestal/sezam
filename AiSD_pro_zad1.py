@@ -13,7 +13,7 @@ class LinkedList:
         self.tail = None
 
     def push(self, value: Any) -> None:
-        temp = Node
+        temp = Node()
         temp.value = value
         temp.next = self.head
         self.head = temp
@@ -49,12 +49,15 @@ class LinkedList:
         return tem
 
     def remove(self, after: Node) -> Any:
-        n =
+        after.next = after.next.next
 
-list_ = LinkedList()
+    def print(self):
+        print(str(self.head.value) + " -> " + str(self.head.next.value))
 
-list_.push(1)
-list_.push(0)
-
-list_.append(9)
-list_.append(10)
+    def __len__(self):
+        wyn = 0
+        temp = self.head
+        while(temp != None):
+            temp = temp.next
+            wyn = wyn + 1
+        return wyn
