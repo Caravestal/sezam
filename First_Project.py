@@ -140,8 +140,6 @@ class Stack:
 
 stack = Stack()
 
-print(str(stack))
-
 assert len(stack) == 0
 
 stack.push(3)
@@ -155,3 +153,5 @@ top_value = stack.pop()
 assert top_value.value == 1
 
 assert len(stack) == 2
+
+print(str(stack))
