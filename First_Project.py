@@ -22,6 +22,12 @@ class LinkedList:
 
     def append(self, value: Any) -> None:
         temp = self.head
+        if (temp == None):
+            t = Node()
+            t.value = value
+            t.next = None
+            self.head = t
+            return
         while (temp.next != None):
             temp = temp.next
         t = Node()
@@ -155,3 +161,50 @@ assert top_value.value == 1
 assert len(stack) == 2
 
 print(str(stack))
+
+# ad.3
+
+class Queue:
+    _storage: LinkedList
+
+    def __init__(self):
+        self._storage = LinkedList()
+
+    def __len__(self):
+        return len(self._storage)
+
+    def __str__(self):
+        temp = self._storage.head
+        t = ""
+        while (True):
+            t = t + str(temp.value)
+            if (temp.next == None):
+                break
+            temp = temp.next
+            t = t + ", "
+        return t
+
+    def peak(self) -> Any:
+        return self._storage.head.value
+
+    def enqueue(self, element: Any) -> None:
+        self._storage.append(element)
+
+    def dequeue(self) -> Any:
+        return self._storage.pop()
+
+queue = Queue()
+
+assert len(queue) == 0
+
+queue.enqueue('klient1')
+queue.enqueue('klient2')
+queue.enqueue('klient3')
+
+assert str(queue) == 'klient1, klient2, klient3'
+
+client_first = queue.dequeue()
+
+assert client_first.value == 'klient1'
+assert str(queue) == 'klient2, klient3'
+assert len(queue) == 2
