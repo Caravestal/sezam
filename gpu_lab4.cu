@@ -1,11 +1,12 @@
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 #include <iostream>
+#include <fstream>
 
 using namespace std;
 
-#define N 1024
-#define BLOCK_SIZE 256 //blockDim.x liczba watkow w bloku
+#define N 5000000
+#define BLOCK_SIZE 512 //blockDim.x liczba watkow w bloku
 
 __global__ void z1_kernel_mnog_skalar(float skalar, float* wejscie_tab, float* wyjscie_tab)
 {
@@ -37,17 +38,17 @@ __global__ void z2_dod_tab(float* a, float* b, float* wyjscie_tab)
 
 }
 
-__global__ void z3_kernel_kopi(float* a, float* b)
+__global__ void z3_kernel_kopi(float* a, float* b, int vector_size)
 {
-	__shared__ float adata[BLOCK_SIZE];
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-	if (idx < N)
-	{
-		adata[threadIdx.x] = a[idx];
-		__syncthreads();
-		b[N - idx] = adata[threadIdx.x];
-	}
+	if (idx >= vector_size) return;
+	int laneID = idx % 32;
+	int warpID = idx / 32;
+	float ai = a[idx];
+	int ile_warpow = vector_size / 32;
+	int nowy_warp = ile_warpow - warpID -1;
+	int nowyidx = nowy_warp * 32 + laneID;
+	b[nowyidx] = __shfl_sync(0xFFFFFFFF, ai, 31 - laneID);
 }
 
 __global__ void z4_kernel_warp_shuffle(float* wejscie_tab, int n)
@@ -172,9 +173,12 @@ void z3()
 	float* cpu_b = new float[N];
 	float* gpu_a,*  gpu_b;
 
+	cout << "wejście" << endl;
+
 	for (int i = 0; i < N; i++)
 	{
 		cpu_a[i] = static_cast<float>(i);
+		//cout << cpu_a[i] << " ";
 	}
 
 	cudaMalloc(&gpu_a, N * sizeof(float));
@@ -182,16 +186,27 @@ void z3()
 
 	cudaMemcpy(gpu_a, cpu_a, N * sizeof(float), cudaMemcpyHostToDevice);
 
-	int gridsize = N + BLOCK_SIZE - 1 / BLOCK_SIZE;
+	int gridsize = (N + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
-	z3_kernel_kopi << < gridsize, BLOCK_SIZE >> > (gpu_a, gpu_b);
+	z3_kernel_kopi << < gridsize, BLOCK_SIZE >> > (gpu_a, gpu_b, N);
+	cudaDeviceSynchronize();
+
+	cudaError_t blad_0 = cudaGetLastError();
+	if (blad_0 != cudaSuccess)
+	{
+		cout << "blad " << blad_0<< endl;
+	}
 
 	cudaMemcpy(cpu_b, gpu_b, N * sizeof(float), cudaMemcpyDeviceToHost);
 
+	ofstream f("output.txt");
+	cout << endl << endl << "wyjscie" << endl;
 	for (int i = 0; i < N; i++)
 	{
-		cout << cpu_b[i] << " ";
+		//cout << cpu_b[i] << " ";
+		f << cpu_b[i] << endl;
 	}
+	f.close();
 	cout << endl;
 
 	delete[] cpu_a;
@@ -254,8 +269,8 @@ int main()
 {
 	//z1();
 	//z2();
-	//z3();
-	z4();
+	z3();
+	//z4();
 
 	return 0;
 }
